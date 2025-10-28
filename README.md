@@ -85,7 +85,7 @@ The "days remaining" logic will be based on the following timelines from the USD
 
 ## Resources Needed
 
-* **Compute:** Google Colab (with T4 GPU)
+* **Compute:** Google Colab
 * **Cost:** $0
 * **APIs:** None
 
