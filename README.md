@@ -1,23 +1,21 @@
-# ITAI-1378-Midterm_FruitFreshnessTimer
+# Fruit Freshness Timer
 
 A computer vision powered system to receive an image of a fruit and provide a remaining time the fruit will remain edible (before being mostly spoiled).
 
 ## Team Members
-* **[Name 1]** - [Email]
-* **[Name 2]** - [Email] (if applicable)
-* **[Name 3]** - [Email] (if applicable)
+* **[Benjamin LaCount II]** - [W218202670@student.hccs.edu]
 
 ---
 
 ## Project Tier
 
-**Tier [1/2/3]:** [Brief justification why this tier]
+**Tier [2]:** [In addition to image classification, feature extraction will be used for calculating practical information for the user (time to spoilage).]
 
 ---
 
 ## Problem Statement
 
-[2-3 sentences describing the problem you're solving]
+[A significant portion of fresh fruit purchased by US households spoils before it can be consumed, making produce one of the largest categories of household food waste. This spoilage not only represents a direct financial loss for families, totaling billions of dollars annually, but it also contributes to the environmental burden of food in landfills. Consumers often struggle to accurately gauge freshness and predict the shelf-life of their fruit, leading to this cycle of waste.]
 
 ## Solution Overview
 
