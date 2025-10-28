@@ -9,7 +9,7 @@ A computer vision powered system to receive an image of a fruit and provide a re
 
 ## Project Tier
 
-**Tier 2:** In addition to image classification, feature extraction will be used for calculating practical information for the user (time to spoilage).
+**Tier 1:** In addition to image classification, feature extraction will be used for calculating practical information for the user (time to spoilage).
 
 ---
 
