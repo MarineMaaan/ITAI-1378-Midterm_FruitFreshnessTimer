@@ -16,7 +16,7 @@ st.set_page_config(layout="wide", page_title="Fruit Freshness Predictor")
 SCRIPT_DIR = os.path.dirname(__file__)
 
 # Define the base directory for the dataset, relative to the script
-data_dir = os.path.join(SCRIPT_DIR, 'Fruit_Dataset_Final')
+data_dir = os.path.join(SCRIPT_DIR, 'fruit_examples')
 
 # Define the list of class names
 class_names = [
