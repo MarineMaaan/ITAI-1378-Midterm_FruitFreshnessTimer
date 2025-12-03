@@ -307,8 +307,9 @@ storage_option = st.sidebar.radio(
 
 # Main content area
 if uploaded_file is not None:
-    image = Image.open(uploaded_file)
-    st.image(image, caption='Uploaded Image', use_column_width=False, width=300)
+    # FIX: Convert to RGB to ensure 3 channels (handles RGBA/Transparency)
+    image = Image.open(uploaded_file).convert('RGB')
+    st.image(image, caption='Uploaded Image', use_container_width=False, width=300)
     st.write("")
     st.write("Classifying...")
 
@@ -344,8 +345,9 @@ else:
                     break
         
         if found_image_path:
-            example_image = Image.open(found_image_path)
-            st.image(example_image, caption=f'Example: {selected_freshness_state.capitalize()} {selected_fruit_type.capitalize()}', use_column_width=False, width=300)
+            # FIX: Convert to RGB here as well
+            example_image = Image.open(found_image_path).convert('RGB')
+            st.image(example_image, caption=f'Example: {selected_freshness_state.capitalize()} {selected_fruit_type.capitalize()}', use_container_width=False, width=300)
 
             st.write("")
             st.write("Classifying example...")
