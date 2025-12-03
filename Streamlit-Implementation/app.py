@@ -306,7 +306,7 @@ else:
     # Dynamic example image selection logic
     if selected_fruit_type and selected_freshness_state:
         # Construct the target directory based on selections
-        target_class_dir = os.path.join(data_dir, 'val', f'{selected_freshness_state}_{selected_fruit_type}')
+        target_class_dir = os.path.join(data_dir, f'{selected_freshness_state}_{selected_fruit_type}')
 
         # Check if the directory exists and contains images
         if os.path.exists(target_class_dir) and os.listdir(target_class_dir):
