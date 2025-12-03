@@ -13,7 +13,7 @@ import re
 st.set_page_config(layout="wide", page_title="Fruit Freshness Predictor")
 
 # Get the absolute path to the directory where app.py is located
-SCRIPT_DIR = os.path.dirname(__file__)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Define the base directory for the dataset, relative to the script
 data_dir = os.path.join(SCRIPT_DIR, 'fruit_examples')
@@ -38,6 +38,37 @@ data_transforms = {
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ]),
+}
+
+# --- CUSTOM TIPS CONFIGURATION ---
+SPOILED_DISPOSAL_TIP = "Eco-Friendly Tip: Consider composting this fruit to reduce waste! If composting isn't an option, please discard appropriately."
+
+CUSTOM_STORAGE_TIPS = {
+    'apple': {
+        'pantry': "Apples ripen 6–10 times faster at room temperature than in the fridge. Only keep apples on the counter if you plan to eat them quickly.",
+        'fridge': "Store apples in the crisper drawer. They release ethylene gas, so keep them away from vegetables (like lettuce) to prevent the veggies from rotting.",
+        'freezer': "Do not freeze apples whole. They must be peeled, cored, and sliced (usually treated with lemon juice to prevent browning) or cooked into sauce before freezing."
+    },
+    'banana': {
+        'pantry': "The pantry is the standard storage method for bananas. Separate individual bananas from the bunch to slow down ripening slightly.",
+        'fridge': "Only refrigerate bananas after they are ripe. The skin will turn completely black, but the fruit inside will stay firm and edible for another week.",
+        'freezer': "You must peel bananas first. Freezing a banana in the peel makes it impossible to remove later. Peeled frozen bananas are great for smoothies."
+    },
+    'grape': {
+        'pantry': "Pantry storage is not recommended; grapes shrivel and ferment very quickly at room temperature.",
+        'fridge': "Store grapes unwashed in the refrigerator. Water promotes mold growth, so only wash them right before you eat them.",
+        'freezer': "Grapes can be frozen whole (washed and dried). Frozen grapes make excellent 'ice cubes' for wine or healthy snacks."
+    },
+    'mango': {
+        'pantry': "Keep mangoes at room temperature until they yield slightly to pressure (like a peach).",
+        'fridge': "Once ripe, move mangoes to the fridge to stop the ripening process. Refrigerating unripe mangoes prevents them from ripening properly and causes a mealy texture.",
+        'freezer': "Peel, slice, and cube the mango. Flash freeze pieces on a baking sheet before putting them in a bag so they don't stick together."
+    },
+    'orange': {
+        'pantry': "Oranges do well in a cool, dark place with good air circulation.",
+        'fridge': "Refrigerating oranges extends their shelf life significantly compared to pantry storage.",
+        'freezer': "Oranges do not freeze well whole as they become mushy. It is best to freeze the juice, zest, or segments in syrup."
+    }
 }
 
 # Function to convert time to days
@@ -151,14 +182,11 @@ def load_foodkeeper_db():
         fridge_days = convert_to_days(refrigerate_max, refrigerate_metric)
         freezer_days = convert_to_days(freezer_max, freezer_metric) # Calculate freezer_days
 
-        # Populate the FOODKEEPER_DB with days and hardcoded tips
+        # Populate the FOODKEEPER_DB with days
         FOODKEEPER_DB[fruit] = {
             'pantry_days': pantry_days,
             'fridge_days': fridge_days,
-            'freezer_days': freezer_days, # Added freezer_days
-            'pantry_tip': "Store in a cool, dark place.", # Hardcoded pantry tip
-            'fridge_tip': "Refrigerate for extended freshness.", # Hardcoded fridge tip
-            'freezer_tip': "Freeze for long-term storage." # Hardcoded freezer tip
+            'freezer_days': freezer_days
         }
     return FOODKEEPER_DB
 
@@ -193,15 +221,6 @@ model = load_model()
 def predict_freshness(image, model, storage_type, class_names, data_transforms, FOODKEEPER_DB, device):
     """
     Predicts the freshness of an image and provides storage information.
-
-    Args:
-        image (PIL.Image): PIL Image object.
-        model (torch.nn.Module): Trained PyTorch model.
-        storage_type (str): 'pantry', 'fridge', or 'freezer'.
-        class_names (list): List of class names.
-        data_transforms (dict): Dictionary of image transformations.
-        FOODKEEPER_DB (dict): Database of fruit storage information.
-        device (torch.device): The device to run the model on (cpu/cuda).
     """
     # Ensure the model is on the correct device and in evaluation mode
     model = model.to(device)
@@ -231,23 +250,30 @@ def predict_freshness(image, model, storage_type, class_names, data_transforms, 
     state = parts[0].capitalize() # 'Fresh' or 'Rotten'
     fruit = parts[1]
 
-    # 9. Query the FOODKEEPER_DB for storage information
+    # --- RETRIEVE STORAGE TIP ---
+    # 1. If Rotten, use the disposal tip
+    if state == 'Rotten':
+        tip = SPOILED_DISPOSAL_TIP
+    # 2. If Fresh, look for custom specific tip first
+    elif fruit in CUSTOM_STORAGE_TIPS and storage_type in CUSTOM_STORAGE_TIPS[fruit]:
+        tip = CUSTOM_STORAGE_TIPS[fruit][storage_type]
+    # 3. If no custom tip, look in CSV DB
+    elif fruit in FOODKEEPER_DB:
+        tip = FOODKEEPER_DB[fruit].get(f'{storage_type}_tip', "Store properly.")
+    else:
+        tip = "Information not available for this fruit."
+
+    # --- RETRIEVE DAYS DATA ---
     if fruit in FOODKEEPER_DB:
         total_days = FOODKEEPER_DB[fruit].get(f'{storage_type}_days', 0)
-        tip = FOODKEEPER_DB[fruit].get(f'{storage_type}_tip', "Information not available for this storage type.")
-
+        
         # Fallback logic: if total_days from FOODKEEPER_DB is 0 and fruit is Fresh
         if total_days == 0 and state == 'Fresh':
             fallback_duration_str = FALLBACK_STORAGE_DURATIONS.get(fruit, {}).get(storage_type)
             if fallback_duration_str:
                 total_days = parse_duration_string(fallback_duration_str)
-                tip = f"Fallback storage tip: {FOODKEEPER_DB[fruit].get(f'{storage_type}_tip', 'Store properly.')}"
-            else:
-                tip = "Information not available, even with fallback."
-
     else:
         total_days = 0
-        tip = "Information not available for this fruit."
 
     # Calculate the "best guess" for remaining days based on predicted state and confidence
     if state == 'Rotten':
@@ -258,8 +284,6 @@ def predict_freshness(image, model, storage_type, class_names, data_transforms, 
         remaining_days_guess = total_days * top_p.item()
         if total_days == 0 and state == 'Fresh': # Special handling for 0 days from main DB, even with fallback
              remaining_days_text = f"0 (Best guess based on confidence - no duration data)"
-        elif 'Fallback storage tip' in tip:
-            remaining_days_text = f"{math.ceil(remaining_days_guess)} (Fallback estimate based on confidence)"
         else:
             remaining_days_text = f"{math.ceil(remaining_days_guess)} (Best guess based on confidence)"
 
@@ -278,7 +302,7 @@ uploaded_file = st.sidebar.file_uploader("Choose an image...", type=["jpg", "jpe
 
 storage_option = st.sidebar.radio(
     "Select Storage Type:",
-    ('pantry', 'fridge', 'freezer') # Added freezer option
+    ('pantry', 'fridge', 'freezer') 
 )
 
 # Main content area
