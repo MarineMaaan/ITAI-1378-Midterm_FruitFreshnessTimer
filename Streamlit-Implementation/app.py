@@ -11,8 +11,14 @@ import os
 
 st.set_page_config(layout="wide", page_title="Fruit Freshness Predictor")
 
-# Define the base directory
-data_dir = 'fruit_examples'
+# --- PATH CONFIGURATION (CRITICAL FIX) ---
+# Get the absolute path of the directory where app.py is running
+# This prevents FileNotFoundError on Streamlit Cloud
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Define the data directory relative to the script location
+data_dir = os.path.join(BASE_DIR, 'fruit_examples')
+# ------------------------------------------
 
 # Define the list of class names
 class_names = [
@@ -51,7 +57,9 @@ def convert_to_days(value, metric):
 # Cache the FOODKEEPER_DB creation
 @st.cache_data
 def load_foodkeeper_db():
-    file_path = 'FoodKeeper-Data.csv'
+    # FIX: Build the full path dynamically
+    file_path = os.path.join(BASE_DIR, 'FoodKeeper-Data.csv')
+
     # Load the .csv file into a pandas DataFrame
     foodkeeper_df = pd.read_csv(file_path, encoding='latin-1')
 
@@ -105,8 +113,12 @@ def load_model():
     # Replace the final layer with a new one matching our number of classes
     model.fc = nn.Linear(num_ftrs, len(class_names))
 
-    # Load the state dictionary from the best performing model during training
-    model.load_state_dict(torch.load('fruit_freshness_resnet50.pth', map_location=torch.device('cpu')))
+    # FIX: Build the full path dynamically for the model file
+    model_path = os.path.join(BASE_DIR, 'fruit_freshness_resnet50.pth')
+    
+    # Load the state dictionary
+    model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
+
     model = model.to('cpu') # Ensure model is on CPU for Streamlit deployment
     model.eval() # Set to evaluation mode
     return model
@@ -117,15 +129,6 @@ model = load_model()
 def predict_freshness(image, model, storage_type, class_names, data_transforms, FOODKEEPER_DB, device):
     """
     Predicts the freshness of an image and provides storage information.
-
-    Args:
-        image (PIL.Image): PIL Image object.
-        model (torch.nn.Module): Trained PyTorch model.
-        storage_type (str): 'pantry' or 'fridge'.
-        class_names (list): List of class names.
-        data_transforms (dict): Dictionary of image transformations.
-        FOODKEEPER_DB (dict): Database of fruit storage information.
-        device (torch.device): The device to run the model on (cpu/cuda).
     """
     # Ensure the model is on the correct device and in evaluation mode
     model = model.to(device)
@@ -213,7 +216,7 @@ else:
     selected_fruit_type = st.selectbox("Select Fruit Type", ['apple', 'banana', 'grape', 'mango', 'orange'])
     selected_freshness_state = st.selectbox("Select Freshness State", ['fresh', 'rotten'])
 
-    # Dynamic example image selection logic
+    # Dynamic example image selection logic (UPDATED FOR FLAT DIRECTORY)
     if selected_fruit_type and selected_freshness_state:
         # Construct the expected filename prefix (e.g., "fresh_apple")
         target_prefix = f"{selected_freshness_state}_{selected_fruit_type}"
