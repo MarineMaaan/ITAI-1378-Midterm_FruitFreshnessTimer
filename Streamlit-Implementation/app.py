@@ -12,8 +12,11 @@ import re
 
 st.set_page_config(layout="wide", page_title="Fruit Freshness Predictor")
 
-# Define the base directory
-data_dir = '/content/Fruit_Dataset_Final'
+# Get the absolute path to the directory where app.py is located
+SCRIPT_DIR = os.path.dirname(__file__)
+
+# Define the base directory for the dataset, relative to the script
+data_dir = os.path.join(SCRIPT_DIR, 'Fruit_Dataset_Final')
 
 # Define the list of class names
 class_names = [
@@ -116,7 +119,8 @@ FALLBACK_STORAGE_DURATIONS = {
 # Cache the FOODKEEPER_DB creation
 @st.cache_data
 def load_foodkeeper_db():
-    file_path = '/content/FoodKeeper-Data.csv'
+    # Use absolute path for the CSV file
+    file_path = os.path.join(SCRIPT_DIR, 'FoodKeeper-Data.csv')
 
     # Load the .csv file into a pandas DataFrame
     foodkeeper_df = pd.read_csv(file_path, encoding='latin-1')
@@ -175,8 +179,9 @@ def load_model():
     # Replace the final layer with a new one matching our number of classes
     model.fc = nn.Linear(num_ftrs, len(class_names))
 
-    # Load the state dictionary from the best performing model during training
-    model.load_state_dict(torch.load('/content/fruit_freshness_resnet50.pth', map_location=torch.device('cpu')))
+    # Use absolute path for the model weights file
+    model_weights_path = os.path.join(SCRIPT_DIR, 'fruit_freshness_resnet50.pth')
+    model.load_state_dict(torch.load(model_weights_path, map_location=torch.device('cpu')))
 
     model = model.to('cpu') # Ensure model is on CPU for Streamlit deployment
     model.eval() # Set to evaluation mode
@@ -226,7 +231,7 @@ def predict_freshness(image, model, storage_type, class_names, data_transforms, 
     state = parts[0].capitalize() # 'Fresh' or 'Rotten'
     fruit = parts[1]
 
-    # Query the FOODKEEPER_DB for storage information
+    # 9. Query the FOODKEEPER_DB for storage information
     if fruit in FOODKEEPER_DB:
         total_days = FOODKEEPER_DB[fruit].get(f'{storage_type}_days', 0)
         tip = FOODKEEPER_DB[fruit].get(f'{storage_type}_tip', "Information not available for this storage type.")
