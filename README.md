@@ -115,7 +115,7 @@ The "days remaining" logic will be based on the following timelines from the USD
 
 - [x] Repository created
 - [x] Proposal written
-- [ ] Dataset acquired
-- [ ] Model training started
-- [ ] Demo created
+- [x] Dataset acquired
+- [x] Model training started
+- [x] Demo created
 - [ ] Final presentation ready
