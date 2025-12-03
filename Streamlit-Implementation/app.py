@@ -303,23 +303,33 @@ else:
     selected_fruit_type = st.selectbox("Select Fruit Type", ['apple', 'banana', 'grape', 'mango', 'orange'])
     selected_freshness_state = st.selectbox("Select Freshness State", ['fresh', 'rotten'])
 
-    # Dynamic example image selection logic
+    # Dynamic example image selection logic (UPDATED FOR FLAT DIRECTORY)
     if selected_fruit_type and selected_freshness_state:
-        # Construct the target directory based on selections
-        target_class_dir = os.path.join(data_dir, f'{selected_freshness_state}_{selected_fruit_type}')
-
-        # Check if the directory exists and contains images
-        if os.path.exists(target_class_dir) and os.listdir(target_class_dir):
-            # Get the first image file from the directory
-            example_image_filename = os.listdir(target_class_dir)[0]
-            example_path = os.path.join(target_class_dir, example_image_filename)
-
-            example_image = Image.open(example_path)
+        # Construct the expected filename prefix (e.g., "fresh_apple")
+        target_prefix = f"{selected_freshness_state}_{selected_fruit_type}"
+        
+        found_image_path = None
+        
+        # Check if directory exists first to avoid crashes
+        if os.path.exists(data_dir):
+            # Scan the folder for a file matching the prefix
+            for file_name in os.listdir(data_dir):
+                # We check startswith so it finds .jpg, .png, or .jpeg automatically
+                if file_name.startswith(target_prefix):
+                    found_image_path = os.path.join(data_dir, file_name)
+                    break
+        
+        if found_image_path:
+            example_image = Image.open(found_image_path)
             st.image(example_image, caption=f'Example: {selected_freshness_state.capitalize()} {selected_fruit_type.capitalize()}', use_column_width=False, width=300)
 
             st.write("")
             st.write("Classifying example...")
-            fruit, state, confidence, remaining_days_text, tip = predict_freshness(example_image, model, storage_option, class_names, data_transforms, FOODKEEPER_DB, device)
+            
+            # Run prediction
+            fruit, state, confidence, remaining_days_text, tip = predict_freshness(
+                example_image, model, storage_option, class_names, data_transforms, FOODKEEPER_DB, device
+            )
 
             st.subheader(f"Prediction for: {fruit.capitalize()}")
             st.write(f"**Status:** {state}")
@@ -327,4 +337,4 @@ else:
             st.write(f"**Estimated Remaining Days:** {remaining_days_text}")
             st.write(f"**Storage Tip:** {tip}")
         else:
-            st.write(f"No example images found for {selected_freshness_state} {selected_fruit_type}.")
+            st.write(f"No example image found for {selected_freshness_state} {selected_fruit_type} in '{data_dir}'.")
